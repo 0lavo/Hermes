@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Hermes.Api/Hermes.Api.csproj" />
+  <Project Path="Hermes.Tests/Hermes.Tests.csproj" />
+</Solution>
