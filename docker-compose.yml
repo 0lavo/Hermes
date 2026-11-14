@@ -1,0 +1,14 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: hermes-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+    ports:
+      - "127.0.0.1:1433:1433"
+    volumes:
+      - hermes_sqldata:/var/opt/mssql
+
+volumes:
+  hermes_sqldata:
