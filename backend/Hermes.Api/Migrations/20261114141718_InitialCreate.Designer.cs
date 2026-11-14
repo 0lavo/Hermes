@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Hermes.Api.Migrations
 {
     [DbContext(typeof(HermesDbContext))]
-    [Migration("20261113235022_InitialCreate")]
+    [Migration("20261114141718_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -39,7 +39,7 @@ namespace Hermes.Api.Migrations
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("RoomId")
+                    b.Property<int>("SessionId")
                         .HasColumnType("int");
 
                     b.Property<int>("UserId")
@@ -49,7 +49,7 @@ namespace Hermes.Api.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.HasIndex("RoomId", "UserId")
+                    b.HasIndex("SessionId", "UserId")
                         .IsUnique();
 
                     b.ToTable("Participants");
@@ -72,7 +72,7 @@ namespace Hermes.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("RoomId")
+                    b.Property<int>("SessionId")
                         .HasColumnType("int");
 
                     b.Property<string>("Status")
@@ -89,7 +89,7 @@ namespace Hermes.Api.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.HasIndex("RoomId", "Status");
+                    b.HasIndex("SessionId", "Status");
 
                     b.ToTable("Questions");
                 });
@@ -110,9 +110,6 @@ namespace Hermes.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("EndedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -120,14 +117,6 @@ namespace Hermes.Api.Migrations
 
                     b.Property<int>("OwnerId")
                         .HasColumnType("int");
-
-                    b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
 
@@ -137,6 +126,37 @@ namespace Hermes.Api.Migrations
                     b.HasIndex("OwnerId");
 
                     b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("Hermes.Api.Entities.Session", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoomId")
+                        .IsUnique()
+                        .HasFilter("[Status] = 'Active'");
+
+                    b.ToTable("Sessions");
                 });
 
             modelBuilder.Entity("Hermes.Api.Entities.User", b =>
@@ -209,9 +229,9 @@ namespace Hermes.Api.Migrations
 
             modelBuilder.Entity("Hermes.Api.Entities.Participant", b =>
                 {
-                    b.HasOne("Hermes.Api.Entities.Room", "Room")
+                    b.HasOne("Hermes.Api.Entities.Session", "Session")
                         .WithMany("Participants")
-                        .HasForeignKey("RoomId")
+                        .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -221,7 +241,7 @@ namespace Hermes.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Room");
+                    b.Navigation("Session");
 
                     b.Navigation("User");
                 });
@@ -234,15 +254,15 @@ namespace Hermes.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Hermes.Api.Entities.Room", "Room")
+                    b.HasOne("Hermes.Api.Entities.Session", "Session")
                         .WithMany("Questions")
-                        .HasForeignKey("RoomId")
+                        .HasForeignKey("SessionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Author");
 
-                    b.Navigation("Room");
+                    b.Navigation("Session");
                 });
 
             modelBuilder.Entity("Hermes.Api.Entities.Room", b =>
@@ -254,6 +274,17 @@ namespace Hermes.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Hermes.Api.Entities.Session", b =>
+                {
+                    b.HasOne("Hermes.Api.Entities.Room", "Room")
+                        .WithMany("Sessions")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("Hermes.Api.Entities.Vote", b =>
@@ -288,6 +319,11 @@ namespace Hermes.Api.Migrations
                 });
 
             modelBuilder.Entity("Hermes.Api.Entities.Room", b =>
+                {
+                    b.Navigation("Sessions");
+                });
+
+            modelBuilder.Entity("Hermes.Api.Entities.Session", b =>
                 {
                     b.Navigation("Participants");
 

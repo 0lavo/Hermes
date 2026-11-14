@@ -36,11 +36,8 @@ namespace Hermes.Api.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Code = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     OwnerId = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    EndedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,12 +51,34 @@ namespace Hermes.Api.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Participants",
+                name: "Sessions",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     RoomId = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    StartedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Sessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Sessions_Rooms_RoomId",
+                        column: x => x.RoomId,
+                        principalTable: "Rooms",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Participants",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SessionId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<int>(type: "int", nullable: false),
                     IsAnonymous = table.Column<bool>(type: "bit", nullable: false),
                     JoinedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
@@ -68,9 +87,9 @@ namespace Hermes.Api.Migrations
                 {
                     table.PrimaryKey("PK_Participants", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Participants_Rooms_RoomId",
-                        column: x => x.RoomId,
-                        principalTable: "Rooms",
+                        name: "FK_Participants_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -87,7 +106,7 @@ namespace Hermes.Api.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    RoomId = table.Column<int>(type: "int", nullable: false),
+                    SessionId = table.Column<int>(type: "int", nullable: false),
                     AuthorId = table.Column<int>(type: "int", nullable: false),
                     Text = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
@@ -104,9 +123,9 @@ namespace Hermes.Api.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Questions_Rooms_RoomId",
-                        column: x => x.RoomId,
-                        principalTable: "Rooms",
+                        name: "FK_Questions_Sessions_SessionId",
+                        column: x => x.SessionId,
+                        principalTable: "Sessions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -139,9 +158,9 @@ namespace Hermes.Api.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Participants_RoomId_UserId",
+                name: "IX_Participants_SessionId_UserId",
                 table: "Participants",
-                columns: new[] { "RoomId", "UserId" },
+                columns: new[] { "SessionId", "UserId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -155,9 +174,9 @@ namespace Hermes.Api.Migrations
                 column: "AuthorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Questions_RoomId_Status",
+                name: "IX_Questions_SessionId_Status",
                 table: "Questions",
-                columns: new[] { "RoomId", "Status" });
+                columns: new[] { "SessionId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rooms_Code",
@@ -169,6 +188,13 @@ namespace Hermes.Api.Migrations
                 name: "IX_Rooms_OwnerId",
                 table: "Rooms",
                 column: "OwnerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Sessions_RoomId",
+                table: "Sessions",
+                column: "RoomId",
+                unique: true,
+                filter: "[Status] = 'Active'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
@@ -206,6 +232,9 @@ namespace Hermes.Api.Migrations
 
             migrationBuilder.DropTable(
                 name: "Participants");
+
+            migrationBuilder.DropTable(
+                name: "Sessions");
 
             migrationBuilder.DropTable(
                 name: "Rooms");

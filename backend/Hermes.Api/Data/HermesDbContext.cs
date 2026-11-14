@@ -9,6 +9,7 @@ public class HermesDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Room> Rooms => Set<Room>();
+    public DbSet<Session> Sessions => Set<Session>();
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<Vote> Votes => Set<Vote>();
@@ -29,20 +30,30 @@ public class HermesDbContext : DbContext
         {
             e.Property(r => r.Code).HasMaxLength(10).IsRequired();
             e.Property(r => r.Name).HasMaxLength(100).IsRequired();
-            e.Property(r => r.Status).HasConversion<string>().HasMaxLength(20);
             e.HasIndex(r => r.Code).IsUnique();
 
             e.HasOne(r => r.Owner).WithMany(u => u.OwnedRooms)
                 .HasForeignKey(r => r.OwnerId).OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<Session>(e =>
+        {
+            e.Property(s => s.Status).HasConversion<string>().HasMaxLength(20);
+
+            // Só pode haver uma sessão ativa por sala.
+            e.HasIndex(s => s.RoomId).IsUnique().HasFilter("[Status] = 'Active'");
+
+            e.HasOne(s => s.Room).WithMany(r => r.Sessions)
+                .HasForeignKey(s => s.RoomId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Participant>(e =>
         {
-            // Um utilizador só entra uma vez em cada sala.
-            e.HasIndex(p => new { p.RoomId, p.UserId }).IsUnique();
+            // Um utilizador só entra uma vez em cada sessão.
+            e.HasIndex(p => new { p.SessionId, p.UserId }).IsUnique();
 
-            e.HasOne(p => p.Room).WithMany(r => r.Participants)
-                .HasForeignKey(p => p.RoomId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(p => p.Session).WithMany(s => s.Participants)
+                .HasForeignKey(p => p.SessionId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(p => p.User).WithMany(u => u.Participations)
                 .HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -51,10 +62,10 @@ public class HermesDbContext : DbContext
         {
             e.Property(q => q.Text).HasMaxLength(500).IsRequired();
             e.Property(q => q.Status).HasConversion<string>().HasMaxLength(20);
-            e.HasIndex(q => new { q.RoomId, q.Status });
+            e.HasIndex(q => new { q.SessionId, q.Status });
 
-            e.HasOne(q => q.Room).WithMany(r => r.Questions)
-                .HasForeignKey(q => q.RoomId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(q => q.Session).WithMany(s => s.Questions)
+                .HasForeignKey(q => q.SessionId).OnDelete(DeleteBehavior.Cascade);
             // Restrict evita vários caminhos em cascata no SQL Server.
             e.HasOne(q => q.Author).WithMany(p => p.Questions)
                 .HasForeignKey(q => q.AuthorId).OnDelete(DeleteBehavior.Restrict);

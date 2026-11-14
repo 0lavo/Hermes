@@ -11,8 +11,8 @@ public class Question
 {
     public int Id { get; set; }
 
-    public int RoomId { get; set; }
-    public Room Room { get; set; } = null!;
+    public int SessionId { get; set; }
+    public Session Session { get; set; } = null!;
 
     public int AuthorId { get; set; }
     public Participant Author { get; set; } = null!;
