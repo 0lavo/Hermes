@@ -33,6 +33,7 @@ Hermes/
 
 - Git (com acesso ao repositório)
 - .NET SDK 10
+- Node.js 22.18 ou superior (para o frontend)
 - Docker (Docker Desktop ou Docker Engine) com `docker compose`
 
 ## Como arrancar
@@ -85,6 +86,26 @@ Regras:
 - Nunca editar uma migração que já foi para a `main`. Cria-se uma nova.
 - Se houver conflito no `HermesDbContextModelSnapshot.cs`: apagar a própria migração com `dotnet ef migrations remove --project Hermes.Api`, fazer `git pull` e criá-la de novo.
 - Fazer commit da migração junto com o código que a precisa.
+
+## Autenticação (API)
+
+Não há perfil Professor/Aluno: qualquer utilizador autenticado pode criar salas.
+
+| Método | Caminho | Descrição | Respostas |
+|---|---|---|---|
+| POST | `/api/auth/register` | Registo com nome, e-mail e password (mínimo 8 caracteres) | 201, 400, 409 |
+| POST | `/api/auth/login` | Login com e-mail e password | 200, 401 |
+| POST | `/api/auth/google` | Login com Google (`{ "idToken": "..." }`) | 200, 201, 400, 401, 409 |
+| POST | `/api/auth/logout` | Termina a sessão (o cliente apaga o token); exige token | 204, 401 |
+
+As respostas de sucesso trazem `{ user, token }`. O token JWT segue nos pedidos seguintes no cabeçalho `Authorization: Bearer <token>` e dura 8 horas.
+
+Configuração (`backend/Hermes.Api`):
+- `Jwt:Key`: em desenvolvimento vem do `appsettings.Development.json`. Em produção tem de ser definida pela variável de ambiente `Jwt__Key` (mínimo 32 caracteres), senão a API não arranca.
+- `Google:ClientId` (em `appsettings.json`): Client ID do projeto "Hermes" no Google Cloud (não é um segredo). Enquanto a app estiver em modo de teste, só entram com Google as contas listadas em *Público-alvo → Usuários de teste*.
+- CORS: a API aceita pedidos do frontend em `http://localhost:5173`.
+
+Os testes de integração (`dotnet test`, em `backend/`) usam uma base de dados em memória e uma Google simulada, por isso não precisam do Docker nem de internet.
 
 ## Ligar à base de dados com um cliente (DBeaver, etc.)
 
