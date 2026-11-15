@@ -41,7 +41,7 @@ Copiar `.env.example` para `.env` e configurar o endereço do backend:
 
 ```env
 # Substituir pela porta real do backend .NET
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5187/api
 ```
 
 Enquanto não existir esta configuração, o Axios utiliza `/api` como endereço base.
