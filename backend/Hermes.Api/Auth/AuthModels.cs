@@ -30,3 +30,9 @@ public class LoginRequest
 public record UserDto(int Id, string Name, string Email);
 
 public record AuthResponse(UserDto User, string Token);
+
+public class GoogleLoginRequest
+{
+    [Required(ErrorMessage = "O idToken é obrigatório.")]
+    public string IdToken { get; set; } = string.Empty;
+}

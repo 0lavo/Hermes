@@ -1,8 +1,10 @@
+using Hermes.Api.Auth;
 using Hermes.Api.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Hermes.Tests;
 
@@ -10,6 +12,9 @@ namespace Hermes.Tests;
 public class HermesApiFactory : WebApplicationFactory<Program>
 {
     private readonly string _dbName = $"hermes-tests-{Guid.NewGuid()}";
+
+    // A Google simulada: só aceita os tokens registados com Google.Add(...).
+    public FakeGoogleTokenValidator Google { get; } = new();
 
     static HermesApiFactory()
     {
@@ -24,6 +29,10 @@ public class HermesApiFactory : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
         {
             services.AddDbContext<HermesDbContext>(options => options.UseInMemoryDatabase(_dbName));
+
+            // Troca a validação real da Google pela simulada.
+            services.RemoveAll<IGoogleTokenValidator>();
+            services.AddSingleton<IGoogleTokenValidator>(Google);
         });
     }
 }
