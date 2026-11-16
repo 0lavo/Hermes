@@ -106,6 +106,26 @@ public class AuthController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, ToResponse(user));
     }
 
+    // Devolve o utilizador do token (o frontend usa-o para recuperar a sessão).
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var id = User.GetUserId();
+        if (id is null)
+        {
+            return Unauthorized();
+        }
+
+        var user = await _db.Users.FindAsync(id.Value);
+        if (user is null)
+        {
+            return Unauthorized();
+        }
+
+        return Ok(new UserDto(user.Id, user.Name, user.Email));
+    }
+
     // Com JWT o servidor não guarda sessão: o cliente apaga o token.
     [Authorize]
     [HttpPost("logout")]
