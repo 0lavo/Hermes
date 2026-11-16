@@ -133,5 +133,5 @@ Os testes de integração (`dotnet test`, em `backend/`) usam uma base de dados 
 
 - O container não arranca: ver os logs. A password do `.env` tem de ter 8 ou mais caracteres e três de quatro categorias (maiúsculas, minúsculas, números, símbolos).
 - A porta 1433 está ocupada: parar o outro serviço que a usa, ou mudar a porta no `docker-compose.yml`.
+- Erro de ligação à base de dados (sobretudo no Windows): a ligação usa `127.0.0.1` e não `localhost`, porque o container só escuta em IPv4. Confirma com `docker compose ps` que o `hermes-db` está `running`. Se precisares de outro valor, define a variável de ambiente `ConnectionStrings__Default` em vez de alterares o ficheiro, para não o enviares sem querer para o repositório.
 - `dotnet ef` não é reconhecido: correr `dotnet tool restore` dentro de `backend/`.
-- A API dá erro de ligação à base de dados: confirmar com `docker compose ps` que o `hermes-db` está `running`.
