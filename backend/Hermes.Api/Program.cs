@@ -23,6 +23,7 @@ if (!builder.Environment.IsEnvironment("Testing"))
 // --- Autenticação (JWT) ---
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IRoomAccessService, RoomAccessService>();
 builder.Services.Configure<GoogleOptions>(builder.Configuration.GetSection(GoogleOptions.SectionName));
 builder.Services.AddSingleton<IGoogleTokenValidator, GoogleTokenValidator>();
 

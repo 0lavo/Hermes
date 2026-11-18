@@ -107,6 +107,10 @@ Configuração (`backend/Hermes.Api`):
 
 Os testes de integração (`dotnet test`, em `backend/`) usam uma base de dados em memória e uma Google simulada, por isso não precisam do Docker nem de internet.
 
+## Documentação
+
+- [Permissões no servidor (US15)](docs/permissoes.md): como validar se um utilizador pode agir numa sala.
+
 ## Ligar à base de dados com um cliente (DBeaver, etc.)
 
 - Servidor: `localhost`, porta `1433`
