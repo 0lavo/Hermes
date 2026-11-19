@@ -36,3 +36,6 @@ public class GoogleLoginRequest
     [Required(ErrorMessage = "O idToken é obrigatório.")]
     public string IdToken { get; set; } = string.Empty;
 }
+
+// Corpo das respostas de erro 401 e 409: { "message": "..." }.
+public record ErrorResponse(string Message);
