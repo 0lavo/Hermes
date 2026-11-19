@@ -11,7 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecurityTransformer>());
 
 // Nos testes de integração (ambiente "Testing") a base de dados é substituída por uma em memória.
 if (!builder.Environment.IsEnvironment("Testing"))
@@ -67,6 +67,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "Hermes API v1"));
 }
 else
 {

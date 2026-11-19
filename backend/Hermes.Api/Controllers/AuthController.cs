@@ -23,6 +23,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> Register(RegisterRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -46,6 +49,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginRequest request)
     {
         var email = request.Email.Trim().ToLowerInvariant();
@@ -62,6 +68,11 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("google")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> GoogleLogin(GoogleLoginRequest request)
     {
         var info = await _google.ValidateAsync(request.IdToken);
@@ -109,6 +120,8 @@ public class AuthController : ControllerBase
     // Devolve o utilizador do token (o frontend usa-o para recuperar a sessão).
     [Authorize]
     [HttpGet("me")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Me()
     {
         var id = User.GetUserId();
@@ -129,6 +142,8 @@ public class AuthController : ControllerBase
     // Com JWT o servidor não guarda sessão: o cliente apaga o token.
     [Authorize]
     [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public IActionResult Logout() => NoContent();
 
     private AuthResponse ToResponse(User user) =>

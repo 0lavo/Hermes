@@ -64,7 +64,7 @@ Hermes/
    dotnet build
    dotnet run --project Hermes.Api
    ```
-   O endereço da API aparece no terminal.
+   O endereço da API aparece no terminal. A interface Swagger (só em desenvolvimento) fica em `http://localhost:5187/swagger`.
 
 5. Correr os testes (dentro de `backend/`):
    ```
@@ -110,6 +110,7 @@ Os testes de integração (`dotnet test`, em `backend/`) usam uma base de dados 
 ## Documentação
 
 - [Permissões no servidor (US15)](docs/permissoes.md): como validar se um utilizador pode agir numa sala.
+- [Contrato da API (OpenAPI)](docs/openapi.json): especificação gerada pela API (`/openapi/v1.json`). Para a atualizar, arrancar a API e correr `curl -s http://localhost:5187/openapi/v1.json -o docs/openapi.json`.
 
 ## Ligar à base de dados com um cliente (DBeaver, etc.)
 
