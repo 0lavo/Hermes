@@ -63,7 +63,7 @@ public class RoomAccessService : IRoomAccessService
         }
 
         var session = await _db.Sessions
-            .FirstOrDefaultAsync(s => s.RoomId == room.Id && s.Status == SessionStatus.Active);
+            .FirstOrDefaultAsync(s => s.RoomId == room.Id && s.EndedAt == null);
 
         if (session is null)
         {
@@ -81,7 +81,7 @@ public class RoomAccessService : IRoomAccessService
         return new ParticipantAccess(AccessResult.Allowed, session, participant);
     }
 
-    // Os códigos de sala guardam-se em maiúsculas (ex.: AB12CD).
+    // Tira espaços e normaliza o código antes de procurar (ex.: " 482913" → "482913").
     private Task<Room?> FindRoomAsync(string roomCode)
     {
         var code = roomCode.Trim().ToUpperInvariant();

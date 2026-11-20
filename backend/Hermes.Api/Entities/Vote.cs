@@ -1,10 +1,8 @@
 namespace Hermes.Api.Entities;
 
-// Um participante só pode ter um voto por dúvida (índice único a configurar no DbContext).
+// Um participante só pode ter um voto por dúvida: a chave primária é (QuestionId, ParticipantId).
 public class Vote
 {
-    public int Id { get; set; }
-
     public int QuestionId { get; set; }
     public Question Question { get; set; } = null!;
 

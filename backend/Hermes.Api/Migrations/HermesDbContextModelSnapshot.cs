@@ -101,8 +101,10 @@ namespace Hermes.Api.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasMaxLength(6)
+                        .IsUnicode(false)
+                        .HasColumnType("char(6)")
+                        .IsFixedLength();
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -142,16 +144,11 @@ namespace Hermes.Api.Migrations
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("RoomId")
                         .IsUnique()
-                        .HasFilter("[Status] = 'Active'");
+                        .HasFilter("[EndedAt] IS NULL");
 
                     b.ToTable("Sessions");
                 });
@@ -199,27 +196,18 @@ namespace Hermes.Api.Migrations
 
             modelBuilder.Entity("Hermes.Api.Entities.Vote", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<int>("QuestionId")
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("ParticipantId")
                         .HasColumnType("int");
 
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("int");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
-                    b.HasKey("Id");
+                    b.HasKey("QuestionId", "ParticipantId");
 
                     b.HasIndex("ParticipantId");
-
-                    b.HasIndex("QuestionId", "ParticipantId")
-                        .IsUnique();
 
                     b.ToTable("Votes");
                 });

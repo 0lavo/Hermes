@@ -29,13 +29,12 @@ public class RoomAccessServiceTests
         return (owner, student, room);
     }
 
-    private static async Task<Session> AddSessionAsync(HermesDbContext db, Room room, SessionStatus status)
+    private static async Task<Session> AddSessionAsync(HermesDbContext db, Room room, bool ended)
     {
         var session = new Session
         {
             RoomId = room.Id,
-            Status = status,
-            EndedAt = status == SessionStatus.Ended ? DateTime.UtcNow : null
+            EndedAt = ended ? DateTime.UtcNow : null
         };
 
         db.Sessions.Add(session);
@@ -125,7 +124,7 @@ public class RoomAccessServiceTests
     {
         using var db = NewDb();
         var (_, student, room) = await SeedRoomAsync(db);
-        var ended = await AddSessionAsync(db, room, SessionStatus.Ended);
+        var ended = await AddSessionAsync(db, room, ended: true);
         await JoinAsync(db, ended, student);
         var service = new RoomAccessService(db);
 
@@ -139,7 +138,7 @@ public class RoomAccessServiceTests
     {
         using var db = NewDb();
         var (_, student, room) = await SeedRoomAsync(db);
-        await AddSessionAsync(db, room, SessionStatus.Active);
+        await AddSessionAsync(db, room, ended: false);
         var service = new RoomAccessService(db);
 
         var result = await service.CheckParticipantAsync(room.Code, student.Id);
@@ -152,7 +151,7 @@ public class RoomAccessServiceTests
     {
         using var db = NewDb();
         var (owner, _, room) = await SeedRoomAsync(db);
-        await AddSessionAsync(db, room, SessionStatus.Active);
+        await AddSessionAsync(db, room, ended: false);
         var service = new RoomAccessService(db);
 
         var result = await service.CheckParticipantAsync(room.Code, owner.Id);
@@ -165,7 +164,7 @@ public class RoomAccessServiceTests
     {
         using var db = NewDb();
         var (_, student, room) = await SeedRoomAsync(db);
-        var session = await AddSessionAsync(db, room, SessionStatus.Active);
+        var session = await AddSessionAsync(db, room, ended: false);
         var joined = await JoinAsync(db, session, student);
         var service = new RoomAccessService(db);
 
@@ -183,9 +182,9 @@ public class RoomAccessServiceTests
     {
         using var db = NewDb();
         var (_, student, room) = await SeedRoomAsync(db);
-        var old = await AddSessionAsync(db, room, SessionStatus.Ended);
+        var old = await AddSessionAsync(db, room, ended: true);
         await JoinAsync(db, old, student);
-        await AddSessionAsync(db, room, SessionStatus.Active);
+        await AddSessionAsync(db, room, ended: false);
         var service = new RoomAccessService(db);
 
         var result = await service.CheckParticipantAsync(room.Code, student.Id);
