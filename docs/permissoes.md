@@ -9,15 +9,16 @@ Para decidir se o utilizador pode agir numa sala, usar o `IRoomAccessService` (`
 | `CheckOwnerAsync(código, userId)` | iniciar/encerrar sessão, marcar dúvida como respondida | `Allowed` (traz a sala), `RoomNotFound`, `NotOwner` |
 | `CheckParticipantAsync(código, userId)` | submeter dúvida, votar | `Allowed` (traz a sessão ativa e o participante), `RoomNotFound`, `NoActiveSession`, `NotParticipant` |
 
-Resposta HTTP sugerida: `RoomNotFound` → 404, `NotOwner` e `NotParticipant` → 403, `NoActiveSession` → 409. O dono nunca é participante. Os códigos de sala guardam-se em maiúsculas (ex.: `AB12CD`).
+Resposta HTTP sugerida: `RoomNotFound` → 404, `NotOwner` e `NotParticipant` → 403, `NoActiveSession` → 409. O dono nunca é participante. Os códigos de sala têm 6 dígitos (ex.: `482913`).
 
 Exemplo num endpoint do dono:
 
 ~~~csharp
 var access = await _access.CheckOwnerAsync(code, User.GetUserId()!.Value);
 
-if (access.Result == AccessResult.RoomNotFound) return NotFound();
-if (access.Result == AccessResult.NotOwner) return Forbid();
+if (access.Result == AccessResult.RoomNotFound) return NotFound(new ErrorResponse("Sala não encontrada."));
+if (access.Result == AccessResult.NotOwner)
+    return StatusCode(StatusCodes.Status403Forbidden, new ErrorResponse("Só o dono da sala pode fazer isto."));
 
 var room = access.Room!;
 ~~~
