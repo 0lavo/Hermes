@@ -4,6 +4,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   block?: boolean
+  type?: 'button' | 'submit' | 'reset'
 }
 
 withDefaults(defineProps<Props>(), {
@@ -11,11 +12,13 @@ withDefaults(defineProps<Props>(), {
   size: 'md',
   disabled: false,
   block: false,
+  type: 'button',
 })
 </script>
 
 <template>
   <button
+    :type="type"
     :disabled="disabled"
     :class="[
       'inline-flex items-center justify-center gap-2 font-medium select-none cursor-pointer',
