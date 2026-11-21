@@ -4,7 +4,7 @@ public class Room
 {
     public int Id { get; set; }
 
-    // Código único partilhado com a turma (ex.: AB12CD).
+    // Código único de 6 dígitos partilhado com a turma (ex.: 482913).
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 

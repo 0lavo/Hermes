@@ -28,7 +28,8 @@ public class HermesDbContext : DbContext
 
         modelBuilder.Entity<Room>(e =>
         {
-            e.Property(r => r.Code).HasMaxLength(10).IsRequired();
+            // Código de 6 dígitos (estilo Kahoot): char(6), tamanho fixo e só ASCII.
+            e.Property(r => r.Code).HasMaxLength(6).IsFixedLength().IsUnicode(false).IsRequired();
             e.Property(r => r.Name).HasMaxLength(100).IsRequired();
             e.HasIndex(r => r.Code).IsUnique();
 
@@ -38,10 +39,8 @@ public class HermesDbContext : DbContext
 
         modelBuilder.Entity<Session>(e =>
         {
-            e.Property(s => s.Status).HasConversion<string>().HasMaxLength(20);
-
-            // Só pode haver uma sessão ativa por sala.
-            e.HasIndex(s => s.RoomId).IsUnique().HasFilter("[Status] = 'Active'");
+            // Só pode haver uma sessão ativa (sem EndedAt) por sala.
+            e.HasIndex(s => s.RoomId).IsUnique().HasFilter("[EndedAt] IS NULL");
 
             e.HasOne(s => s.Room).WithMany(r => r.Sessions)
                 .HasForeignKey(s => s.RoomId).OnDelete(DeleteBehavior.Cascade);
@@ -73,8 +72,8 @@ public class HermesDbContext : DbContext
 
         modelBuilder.Entity<Vote>(e =>
         {
-            // RNF04: um participante só vota uma vez em cada dúvida.
-            e.HasIndex(v => new { v.QuestionId, v.ParticipantId }).IsUnique();
+            // RNF04: um participante só vota uma vez em cada dúvida. A própria chave primária garante-o.
+            e.HasKey(v => new { v.QuestionId, v.ParticipantId });
 
             e.HasOne(v => v.Question).WithMany(q => q.Votes)
                 .HasForeignKey(v => v.QuestionId).OnDelete(DeleteBehavior.Cascade);
