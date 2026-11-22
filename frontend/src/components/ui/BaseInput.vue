@@ -24,6 +24,8 @@ interface Props {
   hint?: string
   required?: boolean
   autocomplete?: string
+  maxlength?: number
+  inputmode?: 'text' | 'numeric' | 'decimal' | 'tel' | 'email' | 'search' | 'url' | 'none'
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -115,6 +117,8 @@ function handleInput(event: Event) {
         inputClasses,
         'min-h-[44px]'
       ]"
+      :maxlength="maxlength"
+      :inputmode="inputmode"
       @input="handleInput"
     />
 

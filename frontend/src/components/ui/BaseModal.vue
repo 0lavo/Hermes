@@ -146,7 +146,7 @@ onUnmounted(() => {
     >
       <div
         v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 bg-slate-950/60 backdrop-blur-xs"
+        class="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 bg-slate-950/60 backdrop-blur-xs"
         @click.self="handleBackdropClick"
       >
         <div
@@ -155,7 +155,7 @@ onUnmounted(() => {
           aria-modal="true"
           :aria-labelledby="title ? titleId : undefined"
           tabindex="-1"
-          class="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-xl text-slate-900 dark:text-white outline-none"
+          class="my-auto w-full max-w-lg rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-xl text-slate-900 dark:text-white outline-none"
         >
           <div class="flex items-center justify-between gap-4 mb-4">
             <h2
