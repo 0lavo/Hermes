@@ -158,7 +158,7 @@ Qualquer utilizador autenticado pode criar salas e fica dono delas: na sua sala 
 
 - **Código da sala:** 6 dígitos (100000 a 999999). No frontend, usar `inputmode="numeric"` e `maxlength="6"` no campo do código.
 - **Estados:** `created` (ainda não foi iniciada) → `active` → `ended`. O estado é calculado a partir das sessões. `POST /api/sessions`, `GET`, `start` e `end` devolvem `{ code, name, status }`.
-- **Entrar (`join`):** o dono não pode entrar como participante (403) e sem sessão ativa a resposta é 409. A escolha de anonimato é feita uma vez por sessão: se o aluno voltar a entrar, recebe a escolha original em `{ anonymous }`, mesmo que envie outra.
+- **Entrar (`join`):** o dono não pode entrar como participante (403) e sem sessão ativa a resposta é 409. A escolha de anonimato é obrigatória sempre que o aluno entra e pode mudar durante a sessão: chamar o `join` outra vez grava a escolha nova e devolve-a em `{ anonymous }`. Cada dúvida guarda a escolha que estava ativa quando foi criada, por isso mudar de opção não altera as dúvidas antigas.
 - **Erros:** 403, 404 e 409 trazem `{ "message": "..." }`; 400 traz os erros de validação.
 
 ## Frontend
