@@ -144,6 +144,23 @@ Configuração (`backend/Hermes.Api`):
 
 Os testes de integração (`dotnet test`, em `backend/`) usam uma base de dados em memória e uma Google simulada, pelo que não precisam do Docker nem de internet.
 
+## Salas (API)
+
+Qualquer utilizador autenticado pode criar salas e fica dono delas: na sua sala é o professor, nas dos outros entra como aluno. Todos os endpoints exigem token.
+
+| Método | Caminho | Descrição | Respostas |
+|---|---|---|---|
+| POST | `/api/sessions` | Cria uma sala. Corpo opcional `{ "name": "..." }` (máximo 100 caracteres); sem nome, fica `Sala <código>` | 201, 400, 401 |
+| GET | `/api/sessions` | Lista as salas de que o utilizador é dono, das mais recentes para as mais antigas | 200, 401 |
+| POST | `/api/sessions/{code}/start` | Inicia a sessão (só o dono). Uma sala só pode ser iniciada uma vez | 200, 401, 403, 404, 409 |
+| POST | `/api/sessions/{code}/end` | Encerra a sessão ativa (só o dono). Não pode ser reaberta | 200, 401, 403, 404, 409 |
+| POST | `/api/sessions/{code}/join` | Entra na sessão ativa. Corpo obrigatório `{ "anonymous": true \| false }` | 200, 400, 401, 403, 404, 409 |
+
+- **Código da sala:** 6 dígitos (100000 a 999999). No frontend, usar `inputmode="numeric"` e `maxlength="6"` no campo do código.
+- **Estados:** `created` (ainda não foi iniciada) → `active` → `ended`. O estado é calculado a partir das sessões. `POST /api/sessions`, `GET`, `start` e `end` devolvem `{ code, name, status }`.
+- **Entrar (`join`):** o dono não pode entrar como participante (403) e sem sessão ativa a resposta é 409. A escolha de anonimato é feita uma vez por sessão: se o aluno voltar a entrar, recebe a escolha original em `{ anonymous }`, mesmo que envie outra.
+- **Erros:** 403, 404 e 409 trazem `{ "message": "..." }`; 400 traz os erros de validação.
+
 ## Frontend
 
 O frontend utiliza Vue 3, TypeScript, Vite, Pinia, Vue Router, Axios e Tailwind CSS.
