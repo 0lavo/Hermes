@@ -69,6 +69,9 @@ namespace Hermes.Api.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("bit");
+
                     b.Property<int>("SessionId")
                         .HasColumnType("int");
 

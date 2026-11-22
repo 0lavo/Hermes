@@ -158,7 +158,8 @@ public class SessionsController : ControllerBase
     }
 
     // Um aluno entra na sessão ativa e escolhe se fica anónimo (US09, RF06).
-    // A escolha é feita uma vez por sessão: se já entrou, devolve a escolha que fez antes.
+    // A escolha é obrigatória sempre que entra e pode mudar durante a sessão: se já é participante,
+    // grava a escolha nova. As dúvidas guardam a escolha do momento em que foram criadas (Question.IsAnonymous).
     [HttpPost("{code}/join")]
     [ProducesResponseType(typeof(JoinResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -193,14 +194,16 @@ public class SessionsController : ControllerBase
             return Conflict(new ErrorResponse("Esta sala não tem uma sessão ativa."));
         }
 
+        // request.Anonymous nunca é null aqui: o [Required] do JoinRequest já devolveu 400.
         var existing = await _db.Participants
             .FirstOrDefaultAsync(p => p.SessionId == session.Id && p.UserId == userId.Value);
         if (existing is not null)
         {
+            existing.IsAnonymous = request.Anonymous!.Value;
+            await _db.SaveChangesAsync();
             return Ok(new JoinResponse(existing.IsAnonymous));
         }
 
-        // request.Anonymous nunca é null aqui: o [Required] do JoinRequest já devolveu 400.
         var participant = new Participant
         {
             SessionId = session.Id,

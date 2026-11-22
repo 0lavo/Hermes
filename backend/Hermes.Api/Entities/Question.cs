@@ -17,6 +17,10 @@ public class Question
     public int AuthorId { get; set; }
     public Participant Author { get; set; } = null!;
 
+    // Cópia do Participant.IsAnonymous no momento em que a dúvida é criada. Nunca muda depois:
+    // se o aluno mudar de opção a meio da sessão, as dúvidas antigas não revelam o nome.
+    public bool IsAnonymous { get; set; }
+
     public string Text { get; set; } = string.Empty;
     public QuestionStatus Status { get; set; } = QuestionStatus.Pending;
 
