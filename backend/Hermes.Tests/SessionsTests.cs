@@ -156,7 +156,7 @@ public class SessionsTests : IClassFixture<HermesApiFactory>
     }
 
     [Fact]
-    public async Task Join_DuasVezes_MantemAPrimeiraEscolha()
+    public async Task Join_DuasVezes_AtualizaAEscolha()
     {
         var owner = await NewUserClientAsync();
         var student = await NewUserClientAsync();
@@ -168,7 +168,7 @@ public class SessionsTests : IClassFixture<HermesApiFactory>
         Assert.Equal(HttpStatusCode.OK, first.StatusCode);
         Assert.True((await first.Content.ReadFromJsonAsync<JoinResponse>())!.Anonymous);
         Assert.Equal(HttpStatusCode.OK, second.StatusCode);
-        Assert.True((await second.Content.ReadFromJsonAsync<JoinResponse>())!.Anonymous);
+        Assert.False((await second.Content.ReadFromJsonAsync<JoinResponse>())!.Anonymous);
     }
 
     // ---------- GET /api/sessions ----------
