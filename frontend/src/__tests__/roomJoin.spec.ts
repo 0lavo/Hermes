@@ -79,15 +79,16 @@ describe('JoinRoomModal - US09', () => {
     expect(wrapper.emitted('joined')?.[0]).toEqual([{ code: '482913', anonymous: true }])
   })
 
-  it('respeita a identidade guardada no servidor', async () => {
+  it('permite entrar com identidade visível', async () => {
     mockedJoinRoom.mockResolvedValue({ anonymous: false })
 
     await wrapper.get('#join-room-code').setValue('482913')
-
-    await wrapper.findAll('input[type="radio"]')[1]!.setValue()
+    await wrapper.findAll('input[type="radio"]')[0]!.setValue()
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
+
+    expect(mockedJoinRoom).toHaveBeenCalledWith('482913', false)
 
     expect(wrapper.emitted('joined')?.[0]).toEqual([{ code: '482913', anonymous: false }])
   })

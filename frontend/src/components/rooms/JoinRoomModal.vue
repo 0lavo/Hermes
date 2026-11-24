@@ -181,7 +181,7 @@ async function handleSubmit() {
       </fieldset>
 
       <p class="text-xs text-slate-500 dark:text-slate-400">
-        A escolha de anonimato não pode ser alterada depois da primeira entrada nesta sessão.
+        Podes alterar esta escolha voltando a entrar na sala.
       </p>
 
       <p

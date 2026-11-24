@@ -258,7 +258,7 @@ Resposta de sucesso:
 }
 ```
 
-A resposta contém a opção de anonimato **efetivamente guardada pelo backend**. A primeira escolha fica associada ao participante durante a sessão: se voltar a entrar e selecionar outra opção, o backend devolve a escolha original.
+A resposta contém a opção de anonimato efetivamente guardada pelo backend. Se o participante voltar a entrar na sala e escolher outra opção, o backend atualiza a preferência e devolve a nova escolha. Cada dúvida deverá guardar a escolha ativa no momento da sua criação, para que alterações posteriores não revelem a identidade nas dúvidas antigas.
 
 Atualmente, todas as entradas exigem uma conta autenticada. Participar anonimamente significa ocultar a identidade na apresentação aos colegas, não entrar sem autenticação.
 
@@ -305,7 +305,6 @@ Foram confirmados os seguintes comportamentos:
 - Abertura e fecho do modal de entrada numa sala.
 - Validação do código e da escolha de identidade no modal.
 - Entrada numa sala ativa com uma conta diferente da conta do dono.
-- Manutenção da primeira escolha de anonimato em entradas posteriores, conforme o comportamento atual do backend.
 - Correção do deslocamento vertical do modal em ecrãs de altura reduzida.
 
 ### Testes automáticos
