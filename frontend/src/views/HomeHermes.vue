@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import hermesBird from '@/assets/hermesBird-nobg.png'
+import hermesBird from '@/assets/hermesBird.svg'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import HermesHeader from '@/components/ui/HermesHeader.vue'
 
 interface PreviewQuestion {
   id: number
@@ -157,39 +158,25 @@ const features = [
 <template>
   <div class="min-h-screen flex flex-col text-slate-900 dark:text-slate-50">
     <!-- NAVBAR -->
-    <header class="w-full">
-      <div
-        class="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between gap-4"
+    <HermesHeader>
+      <BaseButton
+        variant="ghost"
+        size="sm"
+        @click="scrollToSection('how-it-works')"
       >
-        <a
-          href="/"
-          aria-label="hermes"
-          class="text-3xl font-extrabold tracking-tight text-[#4f46e5] dark:text-indigo-400 select-none"
-        >
-          hermes
-        </a>
+        How It Works
+      </BaseButton>
 
-        <div class="flex items-center gap-2 sm:gap-3">
-          <BaseButton
-            variant="ghost"
-            size="sm"
-            @click="scrollToSection('how-it-works')"
-          >
-            How It Works
-          </BaseButton>
+      <BaseButton
+        variant="ghost"
+        size="sm"
+        @click="scrollToSection('features')"
+      >
+        Features
+      </BaseButton>
 
-          <BaseButton
-            variant="ghost"
-            size="sm"
-            @click="scrollToSection('features')"
-          >
-            Features
-          </BaseButton>
-
-          <ThemeToggle />
-        </div>
-      </div>
-    </header>
+      <ThemeToggle />
+    </HermesHeader>
 
     <!-- HERO SECTION -->
     <section class="flex-1 flex flex-col justify-between">
@@ -199,7 +186,7 @@ const features = [
         <!-- Round Hermes Bird Mascot -->
         <div class="relative flex items-center justify-center">
           <div
-            class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-slate-50 dark:bg-slate-100 border-4 border-[#e0e7ff] dark:border-indigo-400/35 shadow-lg dark:shadow-indigo-950/60 flex items-center justify-center p-4 transform-gpu transition-transform duration-300 ease-out hover:scale-[1.03]"
+            class="relative w-64 h-64 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-[#fefefe] border-4 border-[#e0e7ff] dark:border-indigo-400/35 shadow-lg dark:shadow-indigo-950/60 flex items-center justify-center p-4 transform-gpu transition-transform duration-300 ease-out hover:scale-[1.03]"
           >
             <img
               :src="hermesBird"

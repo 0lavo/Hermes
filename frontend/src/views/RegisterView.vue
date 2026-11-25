@@ -8,6 +8,7 @@ import { useRouter } from 'vue-router'
 import { register, loginWithGoogle } from '@/services/authService'
 import { useAuthStore } from '@/stores/auth'
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton.vue'
+import HermesHeader from '@/components/ui/HermesHeader.vue'
 
 const email = ref('')
 const password = ref('')
@@ -47,7 +48,7 @@ async function handleRegister() {
     })
 
     authStore.setSession(response)
-    await router.push('/')
+    await router.push({ name: 'MyRooms' })
   } catch (error) {
     if (axios.isAxiosError<{ message?: string }>(error)) {
       errorMessage.value =
@@ -71,7 +72,7 @@ async function handleGoogleCredential(idToken: string) {
     const response = await loginWithGoogle(idToken)
 
     authStore.setSession(response)
-    await router.push('/')
+    await router.push({ name: 'MyRooms' })
   } catch (error) {
     if (axios.isAxiosError<{ message?: string }>(error)) {
       errorMessage.value =
@@ -88,13 +89,12 @@ async function handleGoogleCredential(idToken: string) {
 </script>
 
 <template>
-  <main class="min-h-screen flex items-center justify-center px-4 py-8">
+  <main class="min-h-screen flex flex-col">
+    <HermesHeader />
+
+    <div class="flex flex-1 items-center justify-center px-4 pb-8">
     <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 sm:p-8">
 
-      <!-- Logótipo a adicionar posteriormente -->
-      <p class="text-xl font-bold text-indigo-600 mb-6">
-        hermes
-      </p>
 
       <h1 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">
         Criar conta
@@ -169,6 +169,7 @@ async function handleGoogleCredential(idToken: string) {
         </RouterLink>
       </p>
 
+    </div>
     </div>
   </main>
 </template>
