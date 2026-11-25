@@ -15,6 +15,7 @@ import BaseCard from '@/components/ui/BaseCard.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
+import JoinRoomModal from '@/components/rooms/JoinRoomModal.vue'
 
 type DisplayRoomStatus = 'Live' | 'Ready' | 'Inactive' | 'Ended'
 
@@ -40,6 +41,9 @@ const copiedKey = ref<string | null>(null)
 // Room filter
 const roomFilter = ref<'all' | 'Live' | 'Ready'>('all')
 
+// Join room modal
+const isJoinOpen = ref(false)
+
 // Create room modal
 const isCreateOpen = ref(false)
 const roomName = ref('')
@@ -54,22 +58,19 @@ const isStarting = ref(false)
 const roomToEnd = ref<RoomExtended | null>(null)
 const isEnding = ref(false)
 
-// Archive & delete confirmation modals
+// Archive & delete confirmation modals (kept disabled until backend endpoints exist)
 const roomToArchive = ref<RoomExtended | null>(null)
 const roomToDelete = ref<RoomExtended | null>(null)
 
-// Persistent keys (per user)
-const storageScope = computed(() => {
+// Local date cache fallback (per user) — never overrides API room status
+const datesStorageScope = computed(() => {
   const userId =
     (authStore.user as { id?: string | number; email?: string } | null)?.id ??
     (authStore.user as { email?: string } | null)?.email ??
     'default'
-  return `hermes:my-rooms:${String(userId)}`
+  return `hermes:my-rooms:dates:${String(userId)}`
 })
 
-const archivedKeys = ref<string[]>([])
-const deletedKeys = ref<string[]>([])
-const statusByKey = ref<Record<string, DisplayRoomStatus>>({})
 const datesByKey = ref<Record<string, string>>({})
 
 const dateFilter = ref<'all' | 'today' | 'week' | 'month'>('all')
@@ -127,28 +128,20 @@ function openInNewTab(path: string) {
   document.body.removeChild(anchor)
 }
 
-function applySavedState(list: RoomExtended[]): RoomExtended[] {
+function applyApiRooms(list: RoomExtended[]): RoomExtended[] {
   const nextDates: Record<string, string> = { ...datesByKey.value }
 
   const mapped = list.map((room) => {
     const key = getRoomKey(room)
-    const isArchived = archivedKeys.value.includes(key)
     const normalizedApiStatus = normalizeStatus(room.status)
-    const savedStatus = statusByKey.value[key]
     const dateVal = getRoomDateValue(room)
     if (!nextDates[key]) {
       nextDates[key] = dateVal
     }
 
-    const finalStatus: DisplayRoomStatus = isArchived
-      ? 'Inactive'
-      : savedStatus
-        ? normalizeStatus(savedStatus)
-        : normalizedApiStatus
-
     return {
       ...room,
-      status: finalStatus,
+      status: normalizedApiStatus,
       createdAt: dateVal,
     }
   })
@@ -157,77 +150,39 @@ function applySavedState(list: RoomExtended[]): RoomExtended[] {
   return mapped
 }
 
-function setRoomStatus(room: RoomExtended, status: DisplayRoomStatus) {
-  const key = getRoomKey(room)
-  const normalized = normalizeStatus(status)
-  room.status = normalized
-  statusByKey.value = {
-    ...statusByKey.value,
-    [key]: normalized,
-  }
-}
-
-function loadPersistedState() {
+function loadSavedDates() {
   try {
-    const raw = localStorage.getItem(storageScope.value)
+    const raw = localStorage.getItem(datesStorageScope.value)
     if (!raw) {
-      archivedKeys.value = []
-      deletedKeys.value = []
-      statusByKey.value = {}
       datesByKey.value = {}
       return
     }
-    const parsed = JSON.parse(raw) as {
-      archivedKeys?: string[]
-      deletedKeys?: string[]
-      statusByKey?: Record<string, DisplayRoomStatus>
-      datesByKey?: Record<string, string>
-    }
-    archivedKeys.value = Array.isArray(parsed.archivedKeys) ? parsed.archivedKeys : []
-    deletedKeys.value = Array.isArray(parsed.deletedKeys) ? parsed.deletedKeys : []
-    statusByKey.value =
-      parsed.statusByKey && typeof parsed.statusByKey === 'object'
-        ? parsed.statusByKey
-        : {}
-    datesByKey.value =
-      parsed.datesByKey && typeof parsed.datesByKey === 'object'
-        ? parsed.datesByKey
-        : {}
+    const parsed = JSON.parse(raw) as Record<string, string>
+    datesByKey.value = parsed && typeof parsed === 'object' ? parsed : {}
   } catch {
-    archivedKeys.value = []
-    deletedKeys.value = []
-    statusByKey.value = {}
     datesByKey.value = {}
   }
 }
 
-function savePersistedState() {
+function saveDates() {
   try {
-    localStorage.setItem(
-      storageScope.value,
-      JSON.stringify({
-        archivedKeys: archivedKeys.value,
-        deletedKeys: deletedKeys.value,
-        statusByKey: statusByKey.value,
-        datesByKey: datesByKey.value,
-      }),
-    )
+    localStorage.setItem(datesStorageScope.value, JSON.stringify(datesByKey.value))
   } catch {
     // Ignore storage errors
   }
 }
 
 watch(
-  [archivedKeys, deletedKeys, statusByKey, datesByKey, storageScope],
+  [datesByKey, datesStorageScope],
   () => {
-    savePersistedState()
+    saveDates()
   },
   { deep: true },
 )
 
-watch(storageScope, () => {
-  loadPersistedState()
-  rooms.value = applySavedState(rooms.value)
+watch(datesStorageScope, () => {
+  loadSavedDates()
+  rooms.value = applyApiRooms(rooms.value)
 })
 
 const firstName = computed(() => {
@@ -236,18 +191,10 @@ const firstName = computed(() => {
   return fullName.split(/\s+/)[0]
 })
 
-const visibleRooms = computed(() =>
-  rooms.value.filter((room) => !deletedKeys.value.includes(getRoomKey(room))),
-)
-
 const allActivePool = computed(() =>
-  visibleRooms.value.filter((room) => {
+  rooms.value.filter((room) => {
     const status = normalizeStatus(room.status)
-    return (
-      status !== 'Ended' &&
-      status !== 'Inactive' &&
-      !archivedKeys.value.includes(getRoomKey(room))
-    )
+    return status !== 'Ended' && status !== 'Inactive'
   }),
 )
 
@@ -259,13 +206,9 @@ const activeRooms = computed(() => {
 })
 
 const archivedRooms = computed(() => {
-  const base = visibleRooms.value.filter((room) => {
+  const base = rooms.value.filter((room) => {
     const status = normalizeStatus(room.status)
-    return (
-      status === 'Ended' ||
-      status === 'Inactive' ||
-      archivedKeys.value.includes(getRoomKey(room))
-    )
+    return status === 'Ended' || status === 'Inactive'
   })
 
   if (dateFilter.value === 'all') return base
@@ -337,12 +280,20 @@ async function loadRooms() {
 
   try {
     const fetched = (await getMyRooms()) as RoomExtended[]
-    rooms.value = applySavedState(fetched)
+    rooms.value = applyApiRooms(fetched)
   } catch {
     errorMessage.value = 'Could not load rooms.'
   } finally {
     isLoading.value = false
   }
+}
+
+function openJoinModal() {
+  isJoinOpen.value = true
+}
+
+function closeJoinModal() {
+  isJoinOpen.value = false
 }
 
 function openCreateModal() {
@@ -379,8 +330,8 @@ async function handleCreateRoom() {
       [key]: nowIso,
     }
     created.createdAt = nowIso
+    created.status = normalizeStatus(created.status)
 
-    setRoomStatus(created, 'Ready')
     rooms.value = [created, ...rooms.value]
     closeCreateModal()
   } catch {
@@ -406,15 +357,16 @@ async function confirmStartRoom() {
   isStarting.value = true
   errorMessage.value = ''
 
-  openInNewTab(`/dashboard/${roomCode}`)
-
   try {
     await startRoom(roomCode)
-  } catch {
-    // Allow starting/opening even if session was already started previously
-  } finally {
-    setRoomStatus(target, 'Live')
+    target.status = 'Live'
     roomToStart.value = null
+    openInNewTab(`/dashboard/${roomCode}`)
+    await loadRooms()
+  } catch {
+    errorMessage.value = 'Could not start room. Please try again.'
+    await loadRooms()
+  } finally {
     isStarting.value = false
   }
 }
@@ -436,17 +388,19 @@ async function confirmEndRoom() {
 
   try {
     await endRoom(target.code)
-  } catch {
-    // Update local state even if backend already ended it
-  } finally {
-    setRoomStatus(target, 'Ready')
+    target.status = 'Ended'
     roomToEnd.value = null
+    await loadRooms()
+  } catch {
+    errorMessage.value = 'Could not end room. Please try again.'
+    await loadRooms()
+  } finally {
     isEnding.value = false
   }
 }
 
-function requestArchiveRoom(room: RoomExtended) {
-  roomToArchive.value = room
+function requestArchiveRoom(_room: RoomExtended) {
+  // Temporarily disabled until backend endpoints are implemented
 }
 
 function cancelArchiveRoom() {
@@ -454,45 +408,16 @@ function cancelArchiveRoom() {
 }
 
 async function confirmArchiveRoom() {
-  if (!roomToArchive.value) return
-  const target = roomToArchive.value
-  const key = getRoomKey(target)
-
-  if (normalizeStatus(target.status) === 'Live') {
-    try {
-      await endRoom(target.code)
-    } catch {
-      // Ignore if backend already ended it
-    }
-  }
-
-  if (!datesByKey.value[key]) {
-    datesByKey.value = {
-      ...datesByKey.value,
-      [key]: getRoomDateValue(target),
-    }
-  }
-
-  setRoomStatus(target, 'Inactive')
-
-  if (!archivedKeys.value.includes(key)) {
-    archivedKeys.value = [...archivedKeys.value, key]
-  }
-
-  currentPage.value = 1
+  // Temporarily disabled until backend endpoints are implemented
   roomToArchive.value = null
 }
 
-function handleRestoreRoom(room: RoomExtended) {
-  errorMessage.value = ''
-  const key = getRoomKey(room)
-
-  archivedKeys.value = archivedKeys.value.filter((item) => item !== key)
-  setRoomStatus(room, 'Ready')
+function handleRestoreRoom(_room: RoomExtended) {
+  // Temporarily disabled until backend endpoints are implemented
 }
 
-function requestDeletePermanent(room: RoomExtended) {
-  roomToDelete.value = room
+function requestDeletePermanent(_room: RoomExtended) {
+  // Temporarily disabled until backend endpoints are implemented
 }
 
 function cancelDeletePermanent() {
@@ -500,15 +425,7 @@ function cancelDeletePermanent() {
 }
 
 function confirmDeletePermanent() {
-  if (!roomToDelete.value) return
-  const target = roomToDelete.value
-  const key = getRoomKey(target)
-
-  if (!deletedKeys.value.includes(key)) {
-    deletedKeys.value = [...deletedKeys.value, key]
-  }
-  archivedKeys.value = archivedKeys.value.filter((item) => item !== key)
-
+  // Temporarily disabled until backend endpoints are implemented
   roomToDelete.value = null
 }
 
@@ -592,7 +509,7 @@ async function handleLogout() {
 }
 
 onMounted(() => {
-  loadPersistedState()
+  loadSavedDates()
   void loadRooms()
 })
 </script>
@@ -634,7 +551,7 @@ onMounted(() => {
             type="button"
             variant="secondary"
             class="w-full sm:w-auto"
-            @click="openInNewTab('/join')"
+            @click="openJoinModal"
           >
             Join a room
           </BaseButton>
@@ -807,6 +724,8 @@ onMounted(() => {
                 type="button"
                 variant="ghost"
                 block
+                :disabled="true"
+                title="Coming soon (requires backend archive support)"
                 @click="requestArchiveRoom(room)"
               >
                 Archive
@@ -915,6 +834,8 @@ onMounted(() => {
                     variant="secondary"
                     size="sm"
                     block
+                    :disabled="true"
+                    title="Coming soon (requires backend restore support)"
                     @click="handleRestoreRoom(room)"
                   >
                     Restore
@@ -924,6 +845,8 @@ onMounted(() => {
                     variant="danger"
                     size="sm"
                     block
+                    :disabled="true"
+                    title="Coming soon (requires backend delete support)"
                     @click="requestDeletePermanent(room)"
                   >
                     Delete
@@ -1008,6 +931,8 @@ onMounted(() => {
                         type="button"
                         variant="secondary"
                         size="sm"
+                        :disabled="true"
+                        title="Coming soon (requires backend restore support)"
                         @click="handleRestoreRoom(room)"
                       >
                         Restore
@@ -1017,6 +942,8 @@ onMounted(() => {
                         type="button"
                         variant="danger"
                         size="sm"
+                        :disabled="true"
+                        title="Coming soon (requires backend delete support)"
                         @click="requestDeletePermanent(room)"
                       >
                         Delete permanently
@@ -1061,6 +988,12 @@ onMounted(() => {
         </BaseCard>
       </section>
     </div>
+
+    <!-- Join Room Modal -->
+    <JoinRoomModal
+      :open="isJoinOpen"
+      @close="closeJoinModal"
+    />
 
     <!-- Create Room Modal -->
     <BaseModal
@@ -1160,6 +1093,7 @@ onMounted(() => {
           type="button"
           variant="primary"
           class="w-full sm:w-auto"
+          :disabled="true"
           @click="confirmArchiveRoom"
         >
           Archive
@@ -1191,6 +1125,7 @@ onMounted(() => {
           type="button"
           variant="danger"
           class="w-full sm:w-auto"
+          :disabled="true"
           @click="confirmDeletePermanent"
         >
           Delete permanently

@@ -17,8 +17,7 @@ export interface CreateRoomPayload {
 }
 
 export interface JoinRoomResponse {
-  code?: string
-  [key: string]: unknown
+  anonymous: boolean
 }
 
 export async function getMyRooms(): Promise<Room[]> {
@@ -31,15 +30,22 @@ export async function createRoom(payload: CreateRoomPayload): Promise<Room> {
   return data
 }
 
-export async function joinRoom(code: string, body?: Record<string, unknown>): Promise<JoinRoomResponse> {
-  const { data } = await api.post<JoinRoomResponse>(`/sessions/${code}/join`, body ?? {})
-  return data
+export async function joinRoom(
+  code: string,
+  anonymous: boolean,
+): Promise<JoinRoomResponse> {
+  const response = await api.post<JoinRoomResponse>(
+    `/sessions/${encodeURIComponent(code)}/join`,
+    { anonymous },
+  )
+
+  return response.data
 }
 
 export async function startRoom(code: string): Promise<void> {
-  await api.post(`/sessions/${code}/start`)
+  await api.post(`/sessions/${encodeURIComponent(code)}/start`)
 }
 
 export async function endRoom(code: string): Promise<void> {
-  await api.post(`/sessions/${code}/end`)
+  await api.post(`/sessions/${encodeURIComponent(code)}/end`)
 }

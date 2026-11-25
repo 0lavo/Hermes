@@ -231,7 +231,7 @@ const features = [
               size="lg"
               block
               class="uppercase tracking-wider"
-              @click="goToLogin"
+              @click="goToRegister"
             >
               GET STARTED
             </BaseButton>
@@ -241,7 +241,7 @@ const features = [
               size="lg"
               block
               class="uppercase tracking-wider text-[#4f46e5] dark:text-indigo-400"
-              @click="goToRegister"
+              @click="goToLogin"
             >
               I ALREADY HAVE AN ACCOUNT
             </BaseButton>
