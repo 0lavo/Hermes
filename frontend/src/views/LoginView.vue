@@ -32,7 +32,7 @@ async function handleLogin() {
 
     authStore.setSession(response)
 
-    await router.push('/')
+    await router.push({ name: 'MyRooms' })
   } catch (error) {
     if (axios.isAxiosError<{ message?: string }>(error)) {
       errorMessage.value =
@@ -55,7 +55,7 @@ async function handleGoogleCredential(idToken: string) {
     const response = await loginWithGoogle(idToken)
 
     authStore.setSession(response)
-    await router.push('/')
+    await router.push({ name: 'MyRooms' })
   } catch (error) {
     if (axios.isAxiosError<{ message?: string }>(error)) {
       errorMessage.value =
