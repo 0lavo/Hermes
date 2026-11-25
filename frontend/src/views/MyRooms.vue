@@ -364,8 +364,8 @@ async function confirmStartRoom() {
     openInNewTab(`/dashboard/${roomCode}`)
     await loadRooms()
   } catch {
-    errorMessage.value = 'Could not start room. Please try again.'
     await loadRooms()
+    errorMessage.value = 'Could not start room. Please try again.'
   } finally {
     isStarting.value = false
   }
@@ -392,8 +392,8 @@ async function confirmEndRoom() {
     roomToEnd.value = null
     await loadRooms()
   } catch {
-    errorMessage.value = 'Could not end room. Please try again.'
     await loadRooms()
+    errorMessage.value = 'Could not end room. Please try again.'
   } finally {
     isEnding.value = false
   }
