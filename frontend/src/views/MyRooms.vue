@@ -16,6 +16,7 @@ import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseModal from '@/components/ui/BaseModal.vue'
 import ThemeToggle from '@/components/ui/ThemeToggle.vue'
 import JoinRoomModal from '@/components/rooms/JoinRoomModal.vue'
+import HermesHeader from '@/components/ui/HermesHeader.vue'
 
 type DisplayRoomStatus = 'Live' | 'Ready' | 'Inactive' | 'Ended'
 
@@ -420,24 +421,8 @@ async function handleCopyCode(room: RoomExtended) {
 }
 
 async function handleLogout() {
-  const storeWithLogout = authStore as unknown as {
-    logout?: () => void
-    clearSession?: () => void
-    setSession?: (session: null) => void
-    $reset?: () => void
-  }
-
-  if (typeof storeWithLogout.logout === 'function') {
-    storeWithLogout.logout()
-  } else if (typeof storeWithLogout.clearSession === 'function') {
-    storeWithLogout.clearSession()
-  } else if (typeof storeWithLogout.setSession === 'function') {
-    storeWithLogout.setSession(null)
-  } else if (typeof storeWithLogout.$reset === 'function') {
-    storeWithLogout.$reset()
-  }
-
-  await router.push('/login')
+  authStore.logout()
+  await router.replace('/login')
 }
 
 onMounted(() => {
@@ -448,27 +433,20 @@ onMounted(() => {
 <template>
   <main class="min-h-screen pb-14 sm:pb-16 text-slate-900 dark:text-slate-100">
     <!-- Top Bar -->
-    <header
-      class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border-b border-slate-200 dark:border-slate-800 px-4 sm:px-8 py-3.5 flex items-center justify-between gap-3"
-    >
-      <span class="text-xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400">
-        hermes
-      </span>
+    <HermesHeader>
+      <ThemeToggle />
 
-      <div class="flex items-center gap-2 sm:gap-2.5">
-        <ThemeToggle />
-        <BaseButton
-          type="button"
-          variant="danger"
-          size="sm"
-          @click="handleLogout"
-        >
-          Logout
-        </BaseButton>
-      </div>
-    </header>
+      <BaseButton
+        type="button"
+        variant="danger"
+        size="sm"
+        @click="handleLogout"
+      >
+        Logout
+      </BaseButton>
+    </HermesHeader>
 
-    <div class="max-w-6xl mx-auto px-4 sm:px-8 pt-6 sm:pt-8">
+    <div class="max-w-6xl mx-auto px-6 pt-6 sm:pt-8">
       <!-- Greeting & Primary Actions -->
       <div
         class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-7 sm:mb-8"
