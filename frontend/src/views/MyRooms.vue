@@ -319,7 +319,7 @@ async function confirmEndRoom() {
 
   try {
     await endRoom(target.code)
-
+    target.status = 'Ready'
     roomToEnd.value = null
 
     await loadRooms()
