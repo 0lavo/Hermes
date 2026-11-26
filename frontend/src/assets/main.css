@@ -45,3 +45,6 @@ body {
 code, pre, .font-mono {
   font-family: var(--font-mono);
 }
+html {
+  scrollbar-gutter: stable;
+}
