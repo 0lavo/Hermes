@@ -101,7 +101,7 @@ public class SessionsController : ControllerBase
         }
         var room = access.Room;
 
-        if (await _db.Sessions.AnyAsync(s => s.RoomId == room.Id))
+        if (await _db.Sessions.AnyAsync(s => s.RoomId == room.Id && s.EndedAt == null))
         {
             return Conflict(new ErrorResponse("Esta sala já foi iniciada."));
         }
