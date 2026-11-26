@@ -62,17 +62,6 @@ const isEnding = ref(false)
 const roomToArchive = ref<RoomExtended | null>(null)
 const roomToDelete = ref<RoomExtended | null>(null)
 
-// Local date cache fallback (per user) — never overrides API room status
-const datesStorageScope = computed(() => {
-  const userId =
-    (authStore.user as { id?: string | number; email?: string } | null)?.id ??
-    (authStore.user as { email?: string } | null)?.email ??
-    'default'
-  return `hermes:my-rooms:dates:${String(userId)}`
-})
-
-const datesByKey = ref<Record<string, string>>({})
-
 const dateFilter = ref<'all' | 'today' | 'week' | 'month'>('all')
 const pageSize = 4
 const currentPage = ref(1)
@@ -84,9 +73,11 @@ function getRoomKey(room: RoomExtended): string {
 
 function normalizeStatus(rawStatus: unknown): DisplayRoomStatus {
   const value = String(rawStatus ?? '').trim().toLowerCase()
+
   if (value === 'live' || value === 'active') return 'Live'
   if (value === 'inactive' || value === 'archived') return 'Inactive'
-  if (value === 'ended' || value === 'closed' || value === 'finished') return 'Ended'
+  if (value === 'ended' || value === 'closed' || value === 'finished') return 'Ready'
+
   return 'Ready'
 }
 
@@ -103,16 +94,11 @@ function getRoomDateValue(room: RoomExtended): string {
     room.updatedAt ||
     room.updated_at
 
-  if (fromApi && !Number.isNaN(new Date(fromApi).getTime())) {
-    return fromApi
-  }
+  if (!fromApi) return ''
 
-  const key = getRoomKey(room)
-  if (datesByKey.value[key]) {
-    return datesByKey.value[key]
-  }
+  const date = new Date(fromApi)
 
-  return new Date().toISOString()
+  return Number.isNaN(date.getTime()) ? '' : fromApi
 }
 
 function openInNewTab(path: string) {
@@ -129,15 +115,9 @@ function openInNewTab(path: string) {
 }
 
 function applyApiRooms(list: RoomExtended[]): RoomExtended[] {
-  const nextDates: Record<string, string> = { ...datesByKey.value }
-
-  const mapped = list.map((room) => {
-    const key = getRoomKey(room)
+  return list.map((room) => {
     const normalizedApiStatus = normalizeStatus(room.status)
     const dateVal = getRoomDateValue(room)
-    if (!nextDates[key]) {
-      nextDates[key] = dateVal
-    }
 
     return {
       ...room,
@@ -145,45 +125,7 @@ function applyApiRooms(list: RoomExtended[]): RoomExtended[] {
       createdAt: dateVal,
     }
   })
-
-  datesByKey.value = nextDates
-  return mapped
 }
-
-function loadSavedDates() {
-  try {
-    const raw = localStorage.getItem(datesStorageScope.value)
-    if (!raw) {
-      datesByKey.value = {}
-      return
-    }
-    const parsed = JSON.parse(raw) as Record<string, string>
-    datesByKey.value = parsed && typeof parsed === 'object' ? parsed : {}
-  } catch {
-    datesByKey.value = {}
-  }
-}
-
-function saveDates() {
-  try {
-    localStorage.setItem(datesStorageScope.value, JSON.stringify(datesByKey.value))
-  } catch {
-    // Ignore storage errors
-  }
-}
-
-watch(
-  [datesByKey, datesStorageScope],
-  () => {
-    saveDates()
-  },
-  { deep: true },
-)
-
-watch(datesStorageScope, () => {
-  loadSavedDates()
-  rooms.value = applyApiRooms(rooms.value)
-})
 
 const firstName = computed(() => {
   const fullName = authStore.user?.name?.trim()
@@ -194,7 +136,7 @@ const firstName = computed(() => {
 const allActivePool = computed(() =>
   rooms.value.filter((room) => {
     const status = normalizeStatus(room.status)
-    return status !== 'Ended' && status !== 'Inactive'
+    return status !== 'Inactive'
   }),
 )
 
@@ -208,7 +150,7 @@ const activeRooms = computed(() => {
 const archivedRooms = computed(() => {
   const base = rooms.value.filter((room) => {
     const status = normalizeStatus(room.status)
-    return status === 'Ended' || status === 'Inactive'
+    return status === 'Inactive'
   })
 
   if (dateFilter.value === 'all') return base
@@ -255,22 +197,18 @@ watch([dateFilter, archivedRooms], () => {
 
 function formatDateTime(room: RoomExtended): string {
   const raw = getRoomDateValue(room)
+
+  if (!raw) return 'Date unavailable'
+
   const date = new Date(raw)
-  if (Number.isNaN(date.getTime())) {
-    return new Date().toLocaleString('en-US', {
-      month: 'short',
-      day: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
-  return date.toLocaleString('en-US', {
-    month: 'short',
+
+  return date.toLocaleString('pt-PT', {
     day: '2-digit',
+    month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
   })
 }
 
@@ -323,13 +261,6 @@ async function handleCreateRoom() {
       created.subject = subjectTrimmed
     }
 
-    const key = getRoomKey(created)
-    const nowIso = getRoomDateValue(created)
-    datesByKey.value = {
-      ...datesByKey.value,
-      [key]: nowIso,
-    }
-    created.createdAt = nowIso
     created.status = normalizeStatus(created.status)
 
     rooms.value = [created, ...rooms.value]
@@ -388,8 +319,9 @@ async function confirmEndRoom() {
 
   try {
     await endRoom(target.code)
-    target.status = 'Ended'
+
     roomToEnd.value = null
+
     await loadRooms()
   } catch {
     await loadRooms()
@@ -509,7 +441,6 @@ async function handleLogout() {
 }
 
 onMounted(() => {
-  loadSavedDates()
   void loadRooms()
 })
 </script>
@@ -594,7 +525,6 @@ onMounted(() => {
             >
               <option value="all">All rooms ({{ allActivePool.length }})</option>
               <option value="Live">Live (Active)</option>
-              <option value="Ready">Ready</option>
             </select>
           </div>
         </div>
