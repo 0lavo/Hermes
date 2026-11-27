@@ -105,7 +105,7 @@ public class SessionsTests : IClassFixture<HermesApiFactory>
     }
 
     [Fact]
-    public async Task End_DepoisDoStart_EncerraASala_ENaoSePodeReiniciar()
+    public async Task End_DepoisDoStart_EncerraASala_EPodeReabrir()
     {
         var owner = await NewUserClientAsync();
         var room = await CreateActiveRoomAsync(owner);
@@ -115,7 +115,8 @@ public class SessionsTests : IClassFixture<HermesApiFactory>
 
         Assert.Equal(HttpStatusCode.OK, end.StatusCode);
         Assert.Equal("ended", (await end.Content.ReadFromJsonAsync<RoomDto>())!.Status);
-        Assert.Equal(HttpStatusCode.Conflict, restart.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, restart.StatusCode);
+        Assert.Equal("active", (await restart.Content.ReadFromJsonAsync<RoomDto>())!.Status);
     }
 
     // ---------- POST /api/sessions/{code}/join ----------

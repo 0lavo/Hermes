@@ -47,7 +47,7 @@ public class SessionsController : ControllerBase
         _db.Rooms.Add(room);
         await _db.SaveChangesAsync();
 
-        return StatusCode(StatusCodes.Status201Created, new RoomDto(room.Code, room.Name, "created"));
+        return StatusCode(StatusCodes.Status201Created, new RoomDto(room.Code, room.Name, "created", room.CreatedAt));
     }
 
     // As salas de que o utilizador é dono, das mais recentes para as mais antigas ("As minhas salas").
@@ -72,14 +72,15 @@ public class SessionsController : ControllerBase
                 r.Name,
                 !r.Sessions.Any() ? "created"
                     : r.Sessions.Any(s => s.EndedAt == null) ? "active"
-                    : "ended"))
+                    : "ended",
+                r.CreatedAt))
             .ToListAsync();
 
         return Ok(rooms);
     }
 
-    // Inicia a sessão da sala (só o dono). Pelo contrato, uma sala só se inicia uma vez:
-    // encerrar é definitivo até ao Sprint 3 (reabrir é o RF30).
+    // Inicia uma sessão nova na sala (só o dono). Uma sala encerrada pode ser reaberta (RF30):
+    // cada start cria uma Session nova, por isso os participantes e as dúvidas não passam de uma para a outra.
     [HttpPost("{code}/start")]
     [ProducesResponseType(typeof(RoomDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -103,7 +104,7 @@ public class SessionsController : ControllerBase
 
         if (await _db.Sessions.AnyAsync(s => s.RoomId == room.Id && s.EndedAt == null))
         {
-            return Conflict(new ErrorResponse("Esta sala já foi iniciada."));
+            return Conflict(new ErrorResponse("Esta sala já tem uma sessão ativa."));
         }
 
         _db.Sessions.Add(new Session { RoomId = room.Id });
@@ -115,10 +116,10 @@ public class SessionsController : ControllerBase
         {
             // Dois starts ao mesmo tempo: o índice único filtrado (1 sessão ativa por sala) trava o segundo.
             // Só acontece no SQL Server; a BD em memória dos testes não tem esse índice.
-            return Conflict(new ErrorResponse("Esta sala já foi iniciada."));
+            return Conflict(new ErrorResponse("Esta sala já tem uma sessão ativa."));
         }
 
-        return Ok(new RoomDto(room.Code, room.Name, "active"));
+        return Ok(new RoomDto(room.Code, room.Name, "active", room.CreatedAt));
     }
 
     // Encerra a sessão ativa (só o dono). A partir daqui não entram alunos, dúvidas nem votos.
@@ -154,7 +155,7 @@ public class SessionsController : ControllerBase
 
         // TODO Tarefa 10: avisar os alunos da sala pelo Hub SignalR que a sessão foi encerrada.
 
-        return Ok(new RoomDto(room.Code, room.Name, "ended"));
+        return Ok(new RoomDto(room.Code, room.Name, "ended", room.CreatedAt));
     }
 
     // Um aluno entra na sessão ativa e escolhe se fica anónimo (US09, RF06).

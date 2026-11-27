@@ -1155,7 +1155,8 @@
         "required": [
           "code",
           "name",
-          "status"
+          "status",
+          "createdAt"
         ],
         "type": "object",
         "properties": {
@@ -1167,6 +1168,10 @@
           },
           "status": {
             "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
