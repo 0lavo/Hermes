@@ -1,6 +1,7 @@
 using System.Text;
 using Hermes.Api.Auth;
 using Hermes.Api.Data;
+using Hermes.Api.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -24,6 +25,7 @@ if (!builder.Environment.IsEnvironment("Testing"))
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRoomAccessService, RoomAccessService>();
+builder.Services.AddScoped<IRoomNotifier, RoomNotifier>();
 builder.Services.Configure<GoogleOptions>(builder.Configuration.GetSection(GoogleOptions.SectionName));
 builder.Services.AddSingleton<IGoogleTokenValidator, GoogleTokenValidator>();
 
@@ -49,8 +51,24 @@ builder.Services
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromMinutes(1)
         };
+
+        // O WebSocket do browser não envia cabeçalhos, por isso o cliente SignalR manda o token no URL.
+        // Só se aceita assim nos pedidos ao hub; o resto da API continua a exigir o cabeçalho Authorization.
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddSignalR();
 
 // --- CORS: frontend Vue em desenvolvimento (Vite) ---
 builder.Services.AddCors(options =>
@@ -58,7 +76,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy => policy
         .WithOrigins("http://localhost:5173")
         .AllowAnyHeader()
-        .AllowAnyMethod());
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 var app = builder.Build();
@@ -81,6 +100,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<RoomHub>("/hubs/rooms");
 
 app.Run();
 

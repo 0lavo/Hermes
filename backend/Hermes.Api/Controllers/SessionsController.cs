@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Hermes.Api.Auth;
 using Hermes.Api.Data;
 using Hermes.Api.Entities;
+using Hermes.Api.Hubs;
 using Hermes.Api.Rooms;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,11 +19,13 @@ public class SessionsController : ControllerBase
 {
     private readonly HermesDbContext _db;
     private readonly IRoomAccessService _access;
+    private readonly IRoomNotifier _notifier;
 
-    public SessionsController(HermesDbContext db, IRoomAccessService access)
+    public SessionsController(HermesDbContext db, IRoomAccessService access, IRoomNotifier notifier)
     {
         _db = db;
         _access = access;
+        _notifier = notifier;
     }
 
     // Cria uma sala; quem a cria passa a ser o dono (RF03). Fica "created" até ao start.
@@ -153,7 +156,8 @@ public class SessionsController : ControllerBase
         session.EndedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 
-        // TODO Tarefa 10: avisar os alunos da sala pelo Hub SignalR que a sessão foi encerrada.
+        // Avisa todos os que estão na sala: os alunos saem do ecrã da sessão.
+        await _notifier.SessionEndedAsync(room.Code);
 
         return Ok(new RoomDto(room.Code, room.Name, "ended", room.CreatedAt));
     }
