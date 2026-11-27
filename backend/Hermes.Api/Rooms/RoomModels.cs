@@ -18,6 +18,7 @@ public class JoinRequest
 }
 
 // Estado da sala como o contrato da API o mostra: "created", "active" ou "ended".
-public record RoomDto(string Code, string Name, string Status);
+// CreatedAt é a data de criação da sala, usada no ecrã "As minhas salas".
+public record RoomDto(string Code, string Name, string Status, DateTime CreatedAt);
 
 public record JoinResponse(bool Anonymous);

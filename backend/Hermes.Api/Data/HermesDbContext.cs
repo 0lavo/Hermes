@@ -1,5 +1,6 @@
 using Hermes.Api.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Hermes.Api.Data;
 
@@ -13,6 +14,13 @@ public class HermesDbContext : DbContext
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<Vote> Votes => Set<Vote>();
+
+    // O SQL Server (datetime2) não guarda o fuso: sem isto, as datas lidas vêm com Kind = Unspecified
+    // e o JSON sai sem "Z", e o browser lê-as como hora local. Gravamos sempre em UTC, por isso lemos como UTC.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -81,4 +89,10 @@ public class HermesDbContext : DbContext
                 .HasForeignKey(v => v.ParticipantId).OnDelete(DeleteBehavior.Restrict);
         });
     }
+}
+
+public class UtcDateTimeConverter : ValueConverter<DateTime, DateTime>
+{
+    public UtcDateTimeConverter()
+        : base(v => v, v => DateTime.SpecifyKind(v, DateTimeKind.Utc)) { }
 }
