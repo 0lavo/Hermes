@@ -152,12 +152,12 @@ Qualquer utilizador autenticado pode criar salas e fica dono delas: na sua sala 
 |---|---|---|---|
 | POST | `/api/sessions` | Cria uma sala. Corpo opcional `{ "name": "..." }` (máximo 100 caracteres); sem nome, fica `Sala <código>` | 201, 400, 401 |
 | GET | `/api/sessions` | Lista as salas de que o utilizador é dono, das mais recentes para as mais antigas | 200, 401 |
-| POST | `/api/sessions/{code}/start` | Inicia a sessão (só o dono). Uma sala só pode ser iniciada uma vez | 200, 401, 403, 404, 409 |
-| POST | `/api/sessions/{code}/end` | Encerra a sessão ativa (só o dono). Não pode ser reaberta | 200, 401, 403, 404, 409 |
+| POST | `/api/sessions/{code}/start` | Inicia uma sessão nova (só o dono). Uma sala encerrada pode ser reaberta; se já houver uma sessão ativa, dá 409 | 200, 401, 403, 404, 409 |
+| POST | `/api/sessions/{code}/end` | Encerra a sessão ativa (só o dono). A sala pode ser reaberta com o `start` | 200, 401, 403, 404, 409 |
 | POST | `/api/sessions/{code}/join` | Entra na sessão ativa. Corpo obrigatório `{ "anonymous": true \| false }` | 200, 400, 401, 403, 404, 409 |
 
 - **Código da sala:** 6 dígitos (100000 a 999999). No frontend, usar `inputmode="numeric"` e `maxlength="6"` no campo do código.
-- **Estados:** `created` (ainda não foi iniciada) → `active` → `ended`. O estado é calculado a partir das sessões. `POST /api/sessions`, `GET`, `start` e `end` devolvem `{ code, name, status }`.
+- **Estados:** `created` (ainda não foi iniciada) → `active` → `ended`, e uma sala `ended` volta a `active` com o `start`. Cada reabertura é uma sessão nova: os participantes e as dúvidas da sessão anterior não passam para a nova. O estado é calculado a partir das sessões. `POST /api/sessions`, `GET`, `start` e `end` devolvem `{ code, name, status, createdAt }`, com o `createdAt` em UTC (ISO 8601, com `Z`).
 - **Entrar (`join`):** o dono não pode entrar como participante (403) e sem sessão ativa a resposta é 409. A escolha de anonimato é obrigatória sempre que o aluno entra e pode mudar durante a sessão: chamar o `join` outra vez grava a escolha nova e devolve-a em `{ anonymous }`. Cada dúvida guarda a escolha que estava ativa quando foi criada, por isso mudar de opção não altera as dúvidas antigas.
 - **Erros:** 403, 404 e 409 trazem `{ "message": "..." }`; 400 traz os erros de validação.
 
