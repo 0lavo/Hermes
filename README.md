@@ -161,6 +161,29 @@ Qualquer utilizador autenticado pode criar salas e fica dono delas: na sua sala 
 - **Entrar (`join`):** o dono não pode entrar como participante (403) e sem sessão ativa a resposta é 409. A escolha de anonimato é obrigatória sempre que o aluno entra e pode mudar durante a sessão: chamar o `join` outra vez grava a escolha nova e devolve-a em `{ anonymous }`. Cada dúvida guarda a escolha que estava ativa quando foi criada, por isso mudar de opção não altera as dúvidas antigas.
 - **Erros:** 403, 404 e 409 trazem `{ "message": "..." }`; 400 traz os erros de validação.
 
+## Tempo real (SignalR)
+
+O hub só envia avisos do servidor para os clientes. Criar, votar e encerrar continua a ser feito pela API REST.
+
+- **URL:** `http://localhost:5187/hubs/rooms` (o `VITE_API_BASE_URL` sem o `/api`).
+- **Token:** o mesmo JWT da API. No cliente JS: `accessTokenFactory: () => auth.token`. O browser não manda cabeçalhos no WebSocket, por isso o token vai no URL (`?access_token=`), e isso só é aceite em `/hubs`.
+- **Pacote do frontend:** `@microsoft/signalr`.
+
+| Método (cliente → servidor) | O que faz | Erros (`HubException`) |
+|---|---|---|
+| `JoinRoom(code)` | Entra no grupo da sala. Só para o dono ou para um participante da sessão ativa (fazer primeiro o `join` por REST) | Sala não encontrada · sem sessão ativa · não entrou na sala |
+| `LeaveRoom(code)` | Sai do grupo da sala | |
+
+| Evento (servidor → cliente) | Payload | Quando |
+|---|---|---|
+| `SessionEnded` | `{ code }` | O dono encerra a sala |
+| `QuestionChanged` | dúvida: `{ id, text, status, votes, author, createdAt, answeredAt }` | Dúvida criada, votada, voto retirado ou respondida *(Tarefa 11)* |
+| `QuestionRemoved` | `{ id }` | A dúvida passa a removida *(Tarefa 11)* |
+
+- **Anonimato:** o `author` vem a `null` quando a dúvida é anónima, para todos, incluindo o professor. O servidor é que o esconde; o frontend só mostra o que recebe.
+- **Reconexão:** os grupos perdem-se quando a ligação cai. Usar `withAutomaticReconnect()` e chamar o `JoinRoom` outra vez no `onreconnected`.
+- Os eventos das dúvidas ainda não são enviados: o formato acima é o combinado e entra com a Tarefa 11.
+
 ## Frontend
 
 O frontend utiliza Vue 3, TypeScript, Vite, Pinia, Vue Router, Axios e Tailwind CSS.
